@@ -29,8 +29,7 @@ app.add_middleware(
 # ── Directories ───────────────────────────────────────────────────────────────
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
-STATIC_DIR = BASE_DIR.parent / "frontend"
-
+STATIC_DIR = BASE_DIR / "frontend"
 for d in [UPLOAD_DIR, OUTPUT_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
