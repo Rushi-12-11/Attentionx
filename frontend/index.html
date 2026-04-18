@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AttentionX – AI Content Repurposing Engine</title>
+  <style>
+    /* ── Reset & base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #12121a;
+      --card:      #1a1a27;
+      --border:    #2a2a3d;
+      --accent:    #7c3aed;
+      --accent2:   #a855f7;
+      --gold:      #fbbf24;
+      --text:      #e2e8f0;
+      --muted:     #64748b;
+      --success:   #10b981;
+      --danger:    #ef4444;
+      --radius:    12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Header ───────────────────────────────────────────────────────────── */
+    header {
+      background: linear-gradient(135deg, #0f0f1e 0%, #1a0533 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .logo-icon { font-size: 2rem; }
+    .logo-text { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
+    .logo-text span { color: var(--accent2); }
+    .tagline { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    header .badge {
+      margin-left: auto;
+      background: rgba(124,58,237,.2);
+      border: 1px solid var(--accent);
+      color: var(--accent2);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    /* ── Main layout ──────────────────────────────────────────────────────── */
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+    h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
+
+    /* ── Upload zone ──────────────────────────────────────────────────────── */
+    #upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 3.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    #upload-zone:hover, #upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(124,58,237,.06);
+    }
+    #upload-zone .icon { font-size: 3rem; margin-bottom: 1rem; }
+    #upload-zone p  { color: var(--muted); font-size: 0.9rem; margin-top: .5rem; }
+    #upload-zone strong { color: var(--text); font-size: 1.1rem; }
+    #file-input { display: none; }
+
+    /* ── Buttons ──────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .65rem 1.4rem;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent2); }
+    .btn-sm { padding: .45rem 1rem; font-size: .8rem; }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+    /* ── Processing section ───────────────────────────────────────────────── */
+    #processing-section { display: none; }
+    .pipeline-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+    }
+    .step-row { display: flex; align-items: center; gap: .8rem; margin-bottom: .8rem; font-size: .9rem; }
+    .step-row:last-child { margin-bottom: 0; }
+    .step-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+      transition: background .3s;
+    }
+    .step-dot.active  { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); }
+    .step-dot.done    { background: var(--success); }
+    .step-dot.error   { background: var(--danger); }
+
+    /* progress bar */
+    .progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      margin: 1.2rem 0;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      width: 0%;
+      transition: width .5s ease;
+      border-radius: 99px;
+    }
+    .progress-fill.indeterminate {
+      width: 40%;
+      animation: slide 1.4s ease-in-out infinite;
+    }
+    @keyframes slide {
+      0%  { transform: translateX(-100%); }
+      100%{ transform: translateX(350%); }
+    }
+
+    .status-text { color: var(--accent2); font-size: .85rem; margin-top: .5rem; }
+
+    /* ── Results section ──────────────────────────────────────────────────── */
+    #results-section { display: none; }
+    .results-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .results-header h2 { margin: 0; }
+    .chip {
+      background: rgba(16,185,129,.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: .75rem;
+      font-weight: 700;
+    }
+
+    /* clips grid */
+    #clips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 1.25rem;
+    }
+    .clip-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .2s, transform .2s;
+    }
+    .clip-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+    .clip-video-wrap {
+      position: relative;
+      background: #000;
+      aspect-ratio: 9/16;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .clip-video-wrap video { width: 100%; height: 100%; object-fit: contain; }
+    .clip-num-badge {
+      position: absolute;
+      top: 8px; left: 8px;
+      background: rgba(0,0,0,.7);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: .7rem;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .clip-meta {
+      padding: 1rem;
+    }
+    .clip-headline {
+      font-size: .9rem;
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: .5px;
+      margin-bottom: .4rem;
+      line-height: 1.3;
+    }
+    .clip-reason {
+      font-size: .75rem;
+      color: var(--muted);
+      margin-bottom: .8rem;
+      line-height: 1.5;
+    }
+    .clip-stats { display: flex; gap: .5rem; flex-wrap: wrap; margin-bottom: .8rem; }
+    .stat-tag {
+      background: rgba(124,58,237,.15);
+      border: 1px solid rgba(124,58,237,.3);
+      color: var(--accent2);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: .7rem;
+      font-weight: 600;
+    }
+    .clip-actions { display: flex; gap: .5rem; }
+
+    /* ── Error card ───────────────────────────────────────────────────────── */
+    .error-card {
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      color: var(--danger);
+    }
+    .error-card pre {
+      margin-top: .5rem;
+      font-size: .75rem;
+      opacity: .7;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: .78rem;
+      padding: 2rem;
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">⚡</div>
+  <div>
+    <div class="logo-text">Attention<span>X</span></div>
+    <div class="tagline">AI-Powered Video Content Repurposing Engine</div>
+  </div>
+  <div class="badge">AttentionX AI Hackathon</div>
+</header>
+
+<main>
+
+  <!-- ── Upload Section ─────────────────────────────────────────────────── -->
+  <section id="upload-section">
+    <h2>🎬 Upload Your Long-Form Video</h2>
+    <div id="upload-zone">
+      <div class="icon">📹</div>
+      <strong>Drag & drop your video here</strong>
+      <p>or click to browse · MP4, MOV, AVI, MKV, WEBM supported</p>
+      <p style="margin-top:1rem; color: var(--accent2)">AttentionX will automatically find viral moments and create vertical clips</p>
+      <input type="file" id="file-input" accept="video/*" />
+    </div>
+
+    <div id="file-preview" style="display:none; margin-top:1.2rem;">
+      <div class="pipeline-card" style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+        <div style="font-size:2rem">🎥</div>
+        <div style="flex:1">
+          <div id="file-name" style="font-weight:700;"></div>
+          <div id="file-size" style="font-size:.8rem; color:var(--muted); margin-top:2px;"></div>
+        </div>
+        <button class="btn btn-primary" id="upload-btn">⚡ Generate Clips</button>
+        <button class="btn btn-outline btn-sm" id="clear-btn">✕ Clear</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Processing Section ─────────────────────────────────────────────── -->
+  <section id="processing-section" style="margin-top:2rem;">
+    <h2>🧠 AI Processing Pipeline</h2>
+    <div class="pipeline-card">
+      <div class="progress-bar"><div class="progress-fill indeterminate" id="prog-fill"></div></div>
+      <div id="status-text" class="status-text">Starting pipeline…</div>
+
+      <div style="margin-top:1.5rem; display:flex; flex-direction:column; gap:.4rem;">
+        <div class="step-row"><div class="step-dot" id="dot-audio"></div><span>🎵 Analyzing audio for emotional peaks (Librosa)</span></div>
+        <div class="step-row"><div class="step-dot" id="dot-whisper"></div><span>🗣 Transcribing speech with Whisper AI</span></div>
+        <div class="step-row"><div class="step-dot" id="dot-gemini"></div><span>✨ Selecting viral moments with Gemini 1.5 Flash</span></div>
+        <div class="step-row"><div class="step-dot" id="dot-video"></div><span>📱 Smart-cropping to 9:16 with face tracking (MediaPipe)</span></div>
+        <div class="step-row"><div class="step-dot" id="dot-captions"></div><span>💬 Generating dynamic karaoke captions</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Results Section ────────────────────────────────────────────────── -->
+  <section id="results-section" style="margin-top:2.5rem;">
+    <div class="results-header">
+      <h2>🚀 Your Viral Clips Are Ready</h2>
+      <div class="chip" id="clip-count"></div>
+    </div>
+    <div id="clips-grid"></div>
+    <div style="margin-top:1.5rem; text-align:center;">
+      <button class="btn btn-outline" id="restart-btn">↩ Process Another Video</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  Built with ⚡ for the AttentionX AI Hackathon by UnsaidTalks · Powered by Gemini 1.5 Flash · Whisper · MediaPipe · MoviePy
+</footer>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentFile = null;
+let jobId       = null;
+let pollTimer   = null;
+const API       = ''; // same origin; change to 'http://localhost:8000' for dev
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const uploadZone      = document.getElementById('upload-zone');
+const fileInput       = document.getElementById('file-input');
+const filePreview     = document.getElementById('file-preview');
+const uploadSection   = document.getElementById('upload-section');
+const processingSection = document.getElementById('processing-section');
+const resultsSection  = document.getElementById('results-section');
+const uploadBtn       = document.getElementById('upload-btn');
+const clearBtn        = document.getElementById('clear-btn');
+const restartBtn      = document.getElementById('restart-btn');
+const progFill        = document.getElementById('prog-fill');
+const statusText      = document.getElementById('status-text');
+const clipsGrid       = document.getElementById('clips-grid');
+
+// ── Upload zone interactions ──────────────────────────────────────────────────
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) setFile(fileInput.files[0]); });
+
+function setFile(file) {
+  currentFile = file;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-size').textContent = formatSize(file.size);
+  filePreview.style.display = 'block';
+}
+
+clearBtn.addEventListener('click', () => {
+  currentFile = null;
+  fileInput.value = '';
+  filePreview.style.display = 'none';
+});
+
+// ── Upload & start pipeline ───────────────────────────────────────────────────
+uploadBtn.addEventListener('click', async () => {
+  if (!currentFile) return;
+  uploadBtn.disabled = true;
+  uploadBtn.textContent = '⏳ Uploading…';
+
+  const fd = new FormData();
+  fd.append('file', currentFile);
+
+  try {
+    const res  = await fetch(`${API}/api/upload`, { method: 'POST', body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || 'Upload failed');
+    jobId = data.job_id;
+    showProcessing();
+    startPolling();
+  } catch (err) {
+    alert('Upload error: ' + err.message);
+    uploadBtn.disabled = false;
+    uploadBtn.textContent = '⚡ Generate Clips';
+  }
+});
+
+// ── UI transitions ────────────────────────────────────────────────────────────
+function showProcessing() {
+  uploadSection.style.display    = 'none';
+  processingSection.style.display = 'block';
+  resultsSection.style.display    = 'none';
+}
+function showResults() {
+  processingSection.style.display = 'none';
+  resultsSection.style.display    = 'block';
+}
+
+// ── Polling ───────────────────────────────────────────────────────────────────
+const STEP_KEYWORDS = {
+  'analyzing_audio':  'dot-audio',
+  'transcribing':     'dot-whisper',
+  'selecting_clips':  'dot-gemini',
+  'processing_clips': 'dot-video',
+  'done':             'dot-captions',
+};
+const STEP_ORDER = ['dot-audio','dot-whisper','dot-gemini','dot-video','dot-captions'];
+
+function startPolling() {
+  pollTimer = setInterval(poll, 2500);
+}
+
+async function poll() {
+  try {
+    const res  = await fetch(`${API}/api/status/${jobId}`);
+    const data = await res.json();
+
+    statusText.textContent = data.step || data.status;
+    updateDots(data.status);
+
+    if (data.status === 'done') {
+      clearInterval(pollTimer);
+      progFill.classList.remove('indeterminate');
+      progFill.style.width = '100%';
+      renderClips(data.clips);
+      showResults();
+    } else if (data.status === 'failed') {
+      clearInterval(pollTimer);
+      showError(data.error, data.trace);
+    }
+  } catch { /* network hiccup – keep trying */ }
+}
+
+function updateDots(status) {
+  const activeIdx = STEP_ORDER.indexOf(STEP_KEYWORDS[status] || '');
+  STEP_ORDER.forEach((id, i) => {
+    const dot = document.getElementById(id);
+    if (i < activeIdx)       { dot.className = 'step-dot done'; }
+    else if (i === activeIdx){ dot.className = 'step-dot active'; }
+    else                     { dot.className = 'step-dot'; }
+  });
+}
+
+// ── Render clips ──────────────────────────────────────────────────────────────
+function renderClips(clips) {
+  document.getElementById('clip-count').textContent = `${clips.length} clips`;
+  clipsGrid.innerHTML = '';
+
+  clips.forEach((clip, i) => {
+    const card = document.createElement('div');
+    card.className = 'clip-card';
+
+    const previewUrl  = `${API}/api/preview/${jobId}/${clip.name}`;
+    const downloadUrl = `${API}/api/download/${jobId}/${clip.name}`;
+
+    card.innerHTML = `
+      <div class="clip-video-wrap">
+        <video src="${previewUrl}" controls preload="metadata" playsinline></video>
+        <div class="clip-num-badge">CLIP ${i+1}</div>
+      </div>
+      <div class="clip-meta">
+        <div class="clip-headline">${escHtml(clip.headline)}</div>
+        ${clip.reason ? `<div class="clip-reason">${escHtml(clip.reason)}</div>` : ''}
+        <div class="clip-stats">
+          <span class="stat-tag">⏱ ${clip.duration}s</span>
+          <span class="stat-tag">📱 9:16 Vertical</span>
+          <span class="stat-tag">💬 Captioned</span>
+        </div>
+        <div class="clip-actions">
+          <a class="btn btn-primary btn-sm" href="${downloadUrl}" download="${clip.name}">⬇ Download</a>
+          <button class="btn btn-outline btn-sm" onclick="copyLink('${previewUrl}')">🔗 Copy Link</button>
+        </div>
+      </div>`;
+
+    clipsGrid.appendChild(card);
+  });
+}
+
+function showError(msg, trace) {
+  processingSection.style.display = 'none';
+  resultsSection.style.display    = 'block';
+  clipsGrid.innerHTML = `
+    <div class="error-card">
+      <strong>❌ Processing failed</strong>
+      <p style="margin-top:.5rem">${escHtml(msg || 'Unknown error')}</p>
+      ${trace ? `<pre>${escHtml(trace.slice(0, 800))}</pre>` : ''}
+    </div>`;
+  document.getElementById('clip-count').textContent = '0 clips';
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+restartBtn.addEventListener('click', () => {
+  clearInterval(pollTimer);
+  jobId = null; currentFile = null;
+  fileInput.value = '';
+  filePreview.style.display   = 'none';
+  clipsGrid.innerHTML         = '';
+  progFill.style.width        = '0%';
+  progFill.classList.add('indeterminate');
+  STEP_ORDER.forEach(id => document.getElementById(id).className = 'step-dot');
+  uploadBtn.disabled          = false;
+  uploadBtn.textContent       = '⚡ Generate Clips';
+  uploadSection.style.display = '';
+  processingSection.style.display = 'none';
+  resultsSection.style.display    = 'none';
+});
+
+function formatSize(bytes) {
+  if (bytes < 1024**2) return (bytes/1024).toFixed(1) + ' KB';
+  if (bytes < 1024**3) return (bytes/1024**2).toFixed(1) + ' MB';
+  return (bytes/1024**3).toFixed(2) + ' GB';
+}
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function copyLink(url) {
+  navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
+}
+</script>
+</body>
+</html>
