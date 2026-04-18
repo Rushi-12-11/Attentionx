@@ -30,6 +30,7 @@ app.add_middleware(
 UPLOAD_DIR = BASE_DIR / "uploads"
 OUTPUT_DIR = BASE_DIR / "outputs"
 STATIC_DIR = BASE_DIR / "frontend"
+print(f"[Startup] STATIC_DIR={STATIC_DIR} exists={STATIC_DIR.exists()}")
 for d in [UPLOAD_DIR, OUTPUT_DIR]:
     d.mkdir(parents=True, exist_ok=True)
 
