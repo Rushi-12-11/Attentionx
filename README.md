@@ -1,3 +1,6 @@
+<p style="color: #f59e0b; font-size: 0.85rem; margin-top: 8px;">
+  ⚠️ Processing may take 3–5 minutes on the free tier. Use videos under 2 minutes for best results.
+</p>
 # ⚡ AttentionX — AI-Powered Video Content Repurposing Engine
 
 ## 🌐 Live Demo → [attentionx-production.up.railway.app](https://attentionx-production.up.railway.app)
