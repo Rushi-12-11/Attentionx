@@ -197,6 +197,7 @@ async def preview_clip(job_id: str, clip_name: str):
 
 
 @app.get("/health")
+
 async def health():
     return {"status": "ok"}
 
@@ -204,3 +205,8 @@ async def health():
 # ── Serve frontend ────────────────────────────────────────────────────────────
 if STATIC_DIR.exists():
     app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
+    
