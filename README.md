@@ -12,14 +12,6 @@ AttentionX automatically transforms long-form videos into viral short clips — 
 
 ---
 
-## 🚀 Demo
-
-Upload any video → Get viral short clips in minutes.
-
-![AttentionX Demo](frontend/demo.png)
-
----
-
 ## ✨ Features
 
 - 🎯 **AI Clip Selection** — Gemini 1.5 Flash identifies the most impactful moments
