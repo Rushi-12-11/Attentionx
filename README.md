@@ -1,5 +1,7 @@
 # ⚡ AttentionX — AI-Powered Video Content Repurposing Engine
 
+## 🌐 Live Demo → [attentionx-production.up.railway.app](https://attentionx-production.up.railway.app)
+
 > Built for the AttentionX AI Hackathon by UnsaidTalks
 
 AttentionX automatically transforms long-form videos into viral short clips — complete with smart 9:16 cropping, face tracking, and karaoke-style captions — powered by Gemini AI and Whisper.
